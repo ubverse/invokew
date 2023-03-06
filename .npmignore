@@ -1,0 +1,7 @@
+.husky
+.eslintrc.js
+.jscpd.json
+.prettierrc.js
+.prettierignore
+commitlint.config.js
+report
