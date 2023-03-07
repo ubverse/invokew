@@ -35,6 +35,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.4.4",
     "@commitlint/config-conventional": "^17.4.4",
+    "@types/humps": "^2.0.2",
     "@types/jest": "^29.4.0",
     "@types/node": "^18.14.6",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
@@ -50,5 +51,10 @@
     "ts-node": "^10.9.1",
     "ts-standard": "^12.0.2",
     "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.282.0",
+    "@ubverse/slw": "^1.0.1",
+    "humps": "^2.0.1"
   }
 }
