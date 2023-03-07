@@ -45,6 +45,8 @@ export type InvokeFunction<T> = () => Promise<ILambdaResponse<T>>
 
 export type WaitedInvokeResponse<T> = Promise<ILambdaResponse<Nullable<T>>>
 
+export { InvocationType }
+
 export default class LambdaFunction {
   private readonly lambdaName: string
   private readonly client: Lambda
