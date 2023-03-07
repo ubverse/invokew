@@ -1,6 +1,6 @@
 {
   "name": "@ubverse/invokew",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "fancy wrapper to invoke lambda functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.282.0",
-    "@ubverse/slw": "^1.0.1",
+    "@ubverse/slw": "^1.0.2",
     "humps": "^2.0.1"
   }
 }
