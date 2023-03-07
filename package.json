@@ -1,12 +1,12 @@
 {
-  "name": "@ubverse/tslibt",
-  "version": "0.1.0",
-  "description": "",
+  "name": "@ubverse/invokew",
+  "version": "1.0.0",
+  "description": "fancy wrapper to invoke lambda functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git@github.com:ubverse/tslibt.git"
+    "url": "git@github.com:ubverse/invokew.git"
   },
   "scripts": {
     "build": "tsc",
