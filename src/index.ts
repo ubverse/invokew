@@ -4,7 +4,7 @@ import Logger from '@ubverse/slw'
 import { Lambda, InvocationType } from '@aws-sdk/client-lambda'
 import { PartialDeep, Jsonifiable } from 'type-fest'
 
-import { toStringHash } from 'utils'
+import { toStringHash } from './utils'
 
 import {
   IAPIGatewayPayloadParams,
