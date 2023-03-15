@@ -1,6 +1,6 @@
 {
   "name": "@ubverse/invokew",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "fancy wrapper to invoke lambda functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:clean": "rm -rf dist && npm run build",
     "bump:all": "npm run bump:dev && npm run bump:prod",
     "bump:dev": "ncu --upgrade --dep dev --target minor",
     "bump:prod": "ncu --upgrade --dep prod --target minor",
@@ -52,13 +53,13 @@
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
     "ts-standard": "^12.0.2",
-    "type-fest": "^3.6.1",
     "typescript": "^4.9.5"
   },
   "dependencies": {
     "@aws-sdk/client-lambda": "^3.292.0",
     "@ubverse/slw": "^1.0.2",
     "humps": "^2.0.1",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "type-fest": "^3.6.1"
   }
 }
