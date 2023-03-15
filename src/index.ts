@@ -1,49 +1,21 @@
+import _ from 'lodash'
 import humps from 'humps'
-import { Lambda, InvocationType } from '@aws-sdk/client-lambda'
 import Logger from '@ubverse/slw'
+import { Lambda, InvocationType } from '@aws-sdk/client-lambda'
+import { PartialDeep, Jsonifiable } from 'type-fest'
 
-type Nullable<T> = T | null
+import { toStringHash } from 'utils'
 
-interface IHash<T = any> {
-  [key: string]: T
-}
-
-export interface ILambdaResponse<T = any> {
-  hasError: boolean
-  content: T
-}
-
-export interface IAPIGatewayPayloadParams {
-  method: string
-  resource: string
-  body?: string
-  queryString?: IHash<string | number>
-}
-
-export interface ILambdaInvokeRetry {
-  retry: {
-    attempts: number
-    delay: number
-  }
-}
-
-export interface IAPIGatewayPayloadWithRetry extends IAPIGatewayPayloadParams, Partial<ILambdaInvokeRetry> {}
-
-export interface IAPIGatewayResponse {
-  statusCode: number
-  body: string
-  headers: IHash<string>
-}
-
-export interface ILambdaFunctionConstructor {
-  lambdaName: string
-  region: string
-  logger: Logger
-}
-
-export type InvokeFunction<T> = () => Promise<ILambdaResponse<T>>
-
-export type WaitedInvokeResponse<T> = Promise<ILambdaResponse<Nullable<T>>>
+import {
+  IAPIGatewayPayloadParams,
+  IAPIGatewayPayloadWithRetry,
+  IAPIGatewayResponse,
+  ILambdaFunctionConstructor,
+  ILambdaResponse,
+  InvokeFunction,
+  Nullable,
+  WaitedInvokeResponse
+} from './types'
 
 export { InvocationType }
 
@@ -57,34 +29,11 @@ export default class LambdaFunction {
     Object.assign(this, { client, ...params })
   }
 
-  protected makeAPIGatewayPayload (params: IAPIGatewayPayloadParams): IHash {
-    const { method: httpMethod, resource: path, body, queryString } = params
-
-    // convert all query string values to strings
-    const queryStringParameters = Object.fromEntries(
-      Object.entries(queryString ?? {}).map(([key, value]) => [key, value.toString()])
-    )
-
-    return {
-      path,
-      httpMethod,
-      queryStringParameters,
-      body: body ?? null,
-      isBase64Encoded: Boolean(body),
-      resource: '/{proxy+}',
-      headers: { 'Content-Type': 'application/json' },
-      pathParameters: { proxy: path },
-      stageVariables: {},
-      requestContext: {
-        httpMethod,
-        resourcePath: '/{proxy+}',
-        protocol: 'HTTP/1.1'
-      }
-    }
-  }
-
-  private async attempt<T>(params: Partial<ILambdaInvokeRetry>, invokeFunction: InvokeFunction<T>): WaitedInvokeResponse<T> {
-    let { attempts = 5, delay = 4 } = params.retry ?? {}
+  private async attempt<T>(
+    retry: IAPIGatewayPayloadWithRetry['retry'],
+    invokeFunction: InvokeFunction<T>
+  ): WaitedInvokeResponse<T> {
+    let { attempts, delay } = retry
     let res: ILambdaResponse<Nullable<T>> = { hasError: false, content: null }
 
     for (let i = 0; i < attempts; i++) {
@@ -111,7 +60,7 @@ export default class LambdaFunction {
     return res
   }
 
-  protected async invoke<T = any>(payload: any, invocationType: InvocationType): Promise<Nullable<T>> {
+  protected async invoke<T = any>(payload: Jsonifiable, invocationType: InvocationType): Promise<Nullable<T>> {
     const response = await this.client.invoke({
       FunctionName: this.lambdaName,
       InvocationType: invocationType,
@@ -132,11 +81,53 @@ export default class LambdaFunction {
     return JSON.parse(new TextDecoder().decode(response.Payload))
   }
 
-  protected async invokeWrapped<T>(params: IAPIGatewayPayloadWithRetry): WaitedInvokeResponse<T> {
-    const { method, resource, body, queryString, retry } = params
-    const payload = this.makeAPIGatewayPayload({ method, resource, body, queryString })
+  private makeAPIGatewayPayload (params: PartialDeep<IAPIGatewayPayloadParams>): Jsonifiable {
+    const httpMethod = params.method ?? 'GET'
 
-    return await this.attempt({ retry }, async (): Promise<ILambdaResponse> => {
+    /* prettier-ignore */
+    const path = params.resource === undefined
+      ? '/'
+      : params.resource.startsWith('/')
+        ? params.resource
+        : '/' + params.resource
+
+    const isBase64Encoded = params.body?.isBinary ?? false
+    const content = params.body?.content ?? null
+
+    if (isBase64Encoded && !(content instanceof Buffer)) {
+      throw new Error('body.content must be a Buffer when body.isBinary is true')
+    }
+
+    /* prettier-ignore */
+    const body: Nullable<string> = content === null
+      ? null
+      : isBase64Encoded
+        ? (content as Buffer).toString('base64')
+        : JSON.stringify(content)
+
+    return {
+      path,
+      httpMethod,
+      body,
+      isBase64Encoded,
+      headers: Object.assign({ 'Content-Type': 'application/json' }, toStringHash(params.headers ?? {})),
+      queryStringParameters: toStringHash(params.queryString ?? {}),
+      resource: '/{proxy+}',
+      pathParameters: { proxy: path },
+      stageVariables: {},
+      requestContext: {
+        httpMethod,
+        resourcePath: '/{proxy+}',
+        protocol: 'HTTP/1.1'
+      }
+    }
+  }
+
+  protected async apiGatewayInvoke<T>(params: PartialDeep<IAPIGatewayPayloadWithRetry>): WaitedInvokeResponse<T> {
+    const { attempts = 5, delay = 4 } = params.retry ?? {}
+    const payload = this.makeAPIGatewayPayload(_.omit(params, ['retry']))
+
+    return await this.attempt({ attempts, delay }, async (): Promise<ILambdaResponse> => {
       try {
         const res = await this.invoke<IAPIGatewayResponse>(payload, InvocationType.RequestResponse)
 
