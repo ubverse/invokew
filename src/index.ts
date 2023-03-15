@@ -17,7 +17,14 @@ import {
   WaitedInvokeResponse
 } from './types'
 
-export { InvocationType }
+export {
+  InvocationType,
+  IAPIGatewayPayloadWithRetry,
+  IAPIGatewayResponse,
+  ILambdaFunctionConstructor,
+  ILambdaResponse,
+  WaitedInvokeResponse
+}
 
 export default class LambdaFunction {
   private readonly lambdaName: string
